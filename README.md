@@ -53,16 +53,33 @@ grant execute on function public.db_size_mb() to anon;
 
 ## PC GPU heartbeat
 
-1. Create a **secret** gist at https://gist.github.com containing a file `heartbeat.json` with `{}`.
-   The ID is the last part of its URL.
-2. Create a fine-grained GitHub token with **Gists: Read and write** only.
-3. On the PC, in PowerShell:
+Already done (2026-11-17): secret gist `3938fee6162ec8370e09366e94c254aa` holds `heartbeat.json`,
+and its ID is the `GPU_GIST_ID` secret. The collector reads the gist's raw URL, because the
+workflow token gets 403 from the gist API. Until the PC posts, the card is grey: "waiting for
+the first heartbeat".
+
+On the PC, in PowerShell (not as admin):
+
+1. Create a fine-grained token at https://github.com/settings/personal-access-tokens/new.
+   Under Account permissions set **Gists: Read and write**, and nothing else.
+2. Download the script, set the two variables, and test it once:
    ```powershell
-   setx TIDEWORK_GIST_ID "<gist id>"
+   mkdir $HOME	idework -Force
+   iwr https://raw.githubusercontent.com/crawlerm/tidework-status/main/pc/heartbeat.ps1 -OutFile $HOME	idework\heartbeat.ps1
+   setx TIDEWORK_GIST_ID "3938fee6162ec8370e09366e94c254aa"
    setx TIDEWORK_GIST_TOKEN "<token>"
-   schtasks /Create /SC MINUTE /MO 15 /TN "tidework-heartbeat" /TR "powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\path\to\heartbeat.ps1"
    ```
-4. Add `GPU_GIST_ID` as a secret in this repo.
+   Close and reopen PowerShell (setx only affects new windows), then:
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File $HOME\tidework\heartbeat.ps1
+   ```
+3. Schedule it every 15 min:
+   ```powershell
+   schtasks /Create /SC MINUTE /MO 15 /TN "tidework-heartbeat" /TR "powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File $HOME\tidework\heartbeat.ps1"
+   ```
+
+When the token expires the card goes red ("Heartbeat: … old"). Make a new token and repeat the
+`setx TIDEWORK_GIST_TOKEN` line.
 
 "CUDA available" means `nvidia-smi` answered: driver loaded and GPU visible. It does not test the
 CuPy install the hydrodynamics model uses.
