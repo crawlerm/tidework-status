@@ -483,7 +483,8 @@ const status = {
     duration_ms: Date.now() - started,
     interval_min: 30,
   },
-  summary: { worst: worst(...items.map((i) => i.light)), ...counts },
+  // Headline ignores grey (unmeasured) items unless nothing at all could be measured.
+  summary: { worst: counts.grey === items.length ? "grey" : worst(...items.map((i) => i.light).filter((l) => l !== "grey")), ...counts },
   groups: [
     { id: "services", label: "Services" },
     { id: "gauges", label: "Our gauges" },
