@@ -11,6 +11,12 @@
 
 import { writeFile } from "node:fs/promises";
 import { resolve4 } from "node:dns/promises";
+import { setDefaultResultOrder } from "node:dns";
+import { setDefaultAutoSelectFamily } from "node:net";
+
+// GitHub's runners advertise IPv6 they can't always route; Open-Meteo then times out on connect.
+setDefaultResultOrder("ipv4first");
+setDefaultAutoSelectFamily(true);
 
 const OUT = process.argv[2] || "site/status.json";
 // SIMULATE=supabase points the collector at a dead host, to prove the "Supabase down" path.
