@@ -46,7 +46,7 @@ Shows "not installed" until this function exists. Read-only, returns one number:
 ```sql
 create or replace function public.db_size_mb() returns numeric
 language sql security definer set search_path = '' stable as
-$$ select round(pg_database_size(current_database()) / 1048576.0, 1) $$;
+$$ select round(pg_database_size(current_database()) / 1e6, 1) $$;
 revoke all on function public.db_size_mb() from public;
 grant execute on function public.db_size_mb() to anon;
 ```
