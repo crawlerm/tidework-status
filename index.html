@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tidework Status</title>
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1b2430; --muted: #5d6b7a; --line: #e2e6eb;
+    --green: #1f9d55; --amber: #d98b00; --red: #d64545; --grey: #9aa5b1;
+    --green-bg: #e6f5ec; --amber-bg: #fdf3e0; --red-bg: #fbe9e9; --grey-bg: #eef1f4;
+    --bar: #e8ecf0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #11161c; --card: #1a2129; --ink: #e6ebf0; --muted: #93a1b0; --line: #2a333d;
+      --green: #3ccf7a; --amber: #f2a93b; --red: #f06b6b; --grey: #6b7785;
+      --green-bg: #15301f; --amber-bg: #33270f; --red-bg: #3a1a1a; --grey-bg: #232b34;
+      --bar: #2a333d;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #11161c; --card: #1a2129; --ink: #e6ebf0; --muted: #93a1b0; --line: #2a333d;
+    --green: #3ccf7a; --amber: #f2a93b; --red: #f06b6b; --grey: #6b7785;
+    --green-bg: #15301f; --amber-bg: #33270f; --red-bg: #3a1a1a; --grey-bg: #232b34;
+    --bar: #2a333d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+  .overall { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px; font-weight: 600; }
+  .meta { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
+  .meta a { color: inherit; }
+  .banner { padding: 10px 14px; border-radius: 10px; margin-bottom: 16px; font-weight: 500; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 24px 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 14px 12px; border-left-width: 5px; }
+  .card.green { border-left-color: var(--green); } .card.amber { border-left-color: var(--amber); }
+  .card.red { border-left-color: var(--red); } .card.grey { border-left-color: var(--grey); }
+  .top { display: flex; align-items: center; gap: 10px; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .dot.green { background: var(--green); } .dot.amber { background: var(--amber); }
+  .dot.red { background: var(--red); } .dot.grey { background: var(--grey); }
+  .stale .dot { opacity: .45; }
+  .name { font-weight: 600; flex: 1; min-width: 0; }
+  .age { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .reason { margin: 8px 0 0; font-size: 13px; padding: 6px 8px; border-radius: 6px; }
+  .reason.amber { background: var(--amber-bg); } .reason.red { background: var(--red-bg); } .reason.grey { background: var(--grey-bg); }
+  .prov { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .prov b { color: var(--ink); font-weight: 500; }
+  .inc { margin: 2px 0 0 0; padding-left: 16px; }
+  details { margin-top: 8px; font-size: 13px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 12px; user-select: none; }
+  .checks { list-style: none; margin: 6px 0 0; padding: 0; }
+  .checks li { display: flex; gap: 8px; align-items: baseline; padding: 2px 0; }
+  .checks .sd { width: 8px; height: 8px; border-radius: 50%; flex: none; transform: translateY(-1px); }
+  .checks .det { color: var(--muted); margin-left: auto; text-align: right; font-size: 12px; }
+  .cap { margin-top: 8px; font-size: 12px; }
+  .cap .row { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); }
+  .cap .row b { text-align: right; }
+  .cap .row b { color: var(--ink); font-weight: 500; }
+  .bar { height: 6px; background: var(--bar); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+  .bar span { display: block; height: 100%; border-radius: 3px; }
+  .strip { display: flex; gap: 1px; margin-top: 10px; height: 10px; }
+  .strip i { flex: 1; border-radius: 1px; }
+  .strip i.G { background: var(--green); } .strip i.A { background: var(--amber); }
+  .strip i.R { background: var(--red); } .strip i.X { background: var(--grey); }
+  .strip i.E { background: var(--bar); }
+  .striplbl { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 2px; }
+  footer { margin-top: 28px; color: var(--muted); font-size: 12px; }
+  footer a { color: inherit; }
+  .toggle { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 4px 8px; font: inherit; font-size: 12px; cursor: pointer; }
+  @media (max-width: 560px) { .meta { margin-left: 0; text-align: left; width: 100%; } .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Tidework status</h1>
+    <div id="overall" class="overall"></div>
+    <div class="meta" id="meta">Loading…</div>
+  </header>
+  <div id="banner"></div>
+  <main id="main"></main>
+  <footer>
+    Checked every 30 min from GitHub Actions — independent of Supabase and Vercel.
+    Grey = not measured (not configured, or the thing it is measured through is down).
+    The 24 h strip shows one block per check, oldest left.
+    <button class="toggle" id="theme">Theme</button>
+  </footer>
+</div>
+<script>
+const STALE_MIN = 75;                 // collector runs every 30 min; two missed runs = stale
+const COL = { green: "var(--green)", amber: "var(--amber)", red: "var(--red)", grey: "var(--grey)" };
+const WORD = { green: "All working", amber: "Degraded", red: "Failing", grey: "Unknown" };
+let data = null;
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const mins = (iso) => iso ? (Date.now() - Date.parse(iso)) / 60000 : null;
+function ago(iso) {
+  const m = mins(iso); if (m == null) return "never";
+  if (m < 1) return "just now"; if (m < 90) return `${Math.round(m)} min ago`;
+  if (m < 2880) return `${(m / 60).toFixed(1)} h ago`; return `${(m / 1440).toFixed(1)} d ago`;
+}
+const local = (iso) => iso ? new Date(iso).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" }) : "";
+
+function card(it, stale) {
+  const light = stale ? "grey" : it.light;
+  const hist = (data.history?.[it.id] || "").padStart(48, "E").slice(-48);
+  const checks = it.checks.map((c) => `<li><span class="sd" style="background:${COL[c.light] || COL.grey}"></span>${esc(c.label)}<span class="det">${esc(c.detail || (c.ok ? "ok" : ""))}${c.ms != null ? ` · ${c.ms} ms` : ""}</span></li>`).join("");
+  const caps = it.capacity.map((c) => `<div class="cap"><div class="row"><span>${esc(c.label)}</span><b>${c.used == null ? esc(c.note || "n/a") : `${c.used} / ${c.limit} ${esc(c.unit)}${c.pct != null && c.unit !== "%" ? ` (${c.pct}%)` : ""}`}</b></div>${c.pct != null ? `<div class="bar"><span style="width:${Math.min(100, c.pct)}%;background:${COL[c.light] || COL.grey}"></span></div>` : ""}</div>`).join("");
+  const p = it.provider_status;
+  const prov = p ? `<div class="prov">${esc(p.source)}: <b>${esc(p.text)}</b>${p.incidents?.length ? `<ul class="inc">${p.incidents.map((i) => `<li>${esc(i.name)} <i>(${esc(i.status)})</i></li>`).join("")}</ul>` : ""}</div>` : "";
+  const reason = it.light !== "green" && it.reason ? `<div class="reason ${light}">${esc(it.reason)}</div>` : "";
+  return `<div class="card ${light}${stale ? " stale" : ""}">
+    <div class="top"><span class="dot ${light}" title="${light}"></span><span class="name">${esc(it.label)}</span>
+      <span class="age" title="${esc(local(it.last_heard))}">${it.last_heard ? "heard " + ago(it.last_heard) : ""}</span></div>
+    ${reason}${prov}${caps}
+    <div class="strip" title="Last 24 h">${[...hist].map((ch) => `<i class="${ch}"></i>`).join("")}</div>
+    <div class="striplbl"><span>24 h ago</span><span>now</span></div>
+    ${checks ? `<details${it.light !== "green" ? " open" : ""}><summary>${it.checks.length} check${it.checks.length === 1 ? "" : "s"}</summary><ul class="checks">${checks}</ul></details>` : ""}
+  </div>`;
+}
+
+function render() {
+  if (!data) return;
+  const age = mins(data.generated_at);
+  const stale = age > STALE_MIN;
+  const worst = stale ? "grey" : data.summary.worst;
+  const s = data.summary;
+  document.getElementById("overall").style.cssText = `background:var(--${worst}-bg, var(--grey-bg))`;
+  document.getElementById("overall").innerHTML = `<span class="dot ${worst}"></span>${WORD[worst]}
+    <span style="font-weight:400;color:var(--muted);font-size:13px">${s.green} ok · ${s.amber} amber · ${s.red} red · ${s.grey} grey</span>`;
+  document.getElementById("meta").innerHTML = `Checked ${ago(data.generated_at)} (${esc(local(data.generated_at))})<br>
+    ${data.collector.run_url ? `<a href="${esc(data.collector.run_url)}" target="_blank" rel="noopener">collector run</a> · ` : ""}${(data.collector.duration_ms / 1000).toFixed(1)} s`;
+  document.getElementById("banner").innerHTML = stale
+    ? `<div class="banner" style="background:var(--red-bg)">The collector has not reported for ${ago(data.generated_at).replace(" ago", "")}. Every light below is out of date. Check GitHub Actions — scheduled workflows also stop after 60 days without repo activity.</div>` : "";
+  document.getElementById("main").innerHTML = data.groups.map((g) => {
+    const its = data.items.filter((i) => i.group === g.id);
+    return `<h2>${esc(g.label)}</h2><div class="grid">${its.map((i) => card(i, stale)).join("")}</div>`;
+  }).join("");
+}
+
+async function load() {
+  try {
+    const r = await fetch(`status.json?ts=${Date.now()}`, { cache: "no-store" });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    data = await r.json();
+    render();
+  } catch (e) {
+    document.getElementById("meta").textContent = `Could not load status.json (${e.message})`;
+  }
+}
+
+// Theme toggle: per-viewer convenience only.
+const root = document.documentElement;
+try { const t = localStorage.getItem("theme"); if (t) root.dataset.theme = t; } catch {}
+document.getElementById("theme").onclick = () => {
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("theme", root.dataset.theme); } catch {}
+};
+
+load();
+setInterval(load, 5 * 60000);          // pick up each new collector run
+setInterval(render, 30000);            // keep "x min ago" honest between loads
+</script>
+</body>
+</html>

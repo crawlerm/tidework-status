@@ -1,0 +1,69 @@
+name: collect
+
+# Every 30 min: probe every service, gauge and feed, then publish index.html + status.json
+# to GitHub Pages. No commits per run: Pages is deployed from the workflow artifact, and
+# the 24 h history is carried forward by reading the previous live status.json.
+on:
+  schedule:
+    - cron: "3,33 * * * *"
+  workflow_dispatch:
+    inputs:
+      simulate:
+        description: "Blank for a normal run, or 'supabase' to prove the Supabase-down path"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write        # for the keep-alive step below
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Collect status
+        env:
+          PAGES_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          SIMULATE: ${{ inputs.simulate }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          GPU_GIST_ID: ${{ secrets.GPU_GIST_ID }}
+        run: |
+          mkdir -p site
+          node collect.mjs site/status.json
+          cp index.html site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      # GitHub disables scheduled workflows in a public repo after 60 days with no repo
+      # activity. Re-enabling via the API on every run is the usual keep-alive. The page
+      # also shows a red banner if status.json goes stale, whatever the cause.
+      - name: Keep schedule alive
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/collect.yml/enable" || true
