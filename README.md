@@ -64,8 +64,8 @@ On the PC, in PowerShell (not as admin):
    Under Account permissions set **Gists: Read and write**, and nothing else.
 2. Download the script, set the two variables, and test it once:
    ```powershell
-   mkdir $HOME	idework -Force
-   iwr https://raw.githubusercontent.com/crawlerm/tidework-status/main/pc/heartbeat.ps1 -OutFile $HOME	idework\heartbeat.ps1
+   mkdir $HOME\tidework -Force
+   iwr https://raw.githubusercontent.com/crawlerm/tidework-status/main/pc/heartbeat.ps1 -OutFile $HOME\tidework\heartbeat.ps1
    setx TIDEWORK_GIST_ID "3938fee6162ec8370e09366e94c254aa"
    setx TIDEWORK_GIST_TOKEN "<token>"
    ```
