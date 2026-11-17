@@ -265,10 +265,13 @@ async function pcGpu() {
     it.light = "grey"; it.reason = "Not configured — see pc/README";
     return it;
   }
-  const h = env("GITHUB_TOKEN") ? { Authorization: `Bearer ${env("GITHUB_TOKEN")}` } : {};
-  const r = await probe(`https://api.github.com/gists/${gist}`, { headers: { ...h, Accept: "application/vnd.github+json" } });
+  // Raw file URL, not the API: the workflow's GITHUB_TOKEN gets 403 on a personal gist, and
+  // unauthenticated API calls share a 60/h limit across GitHub's runner IPs. A secret gist's
+  // raw file is readable by anyone with its ID. The CDN may lag a few minutes; thresholds allow it.
+  const owner = env("GITHUB_REPOSITORY_OWNER") || "crawlerm";
+  const r = await probe(`https://gist.githubusercontent.com/${owner}/${gist}/raw/heartbeat.json?t=${Date.now()}`);
   let hb = null;
-  try { hb = JSON.parse(r.json()?.files?.["heartbeat.json"]?.content || "null"); } catch {}
+  try { hb = r.ok ? JSON.parse(r.text) : null; } catch {}
   if (r.ok && hb && !hb.ts) {           // gist created with "{}", PC not posting yet
     it.checks.push(check("heartbeat", "Heartbeat", "grey", "waiting for the first heartbeat", r.ms));
     it.light = "grey"; it.reason = "Waiting for the PC's first heartbeat";
