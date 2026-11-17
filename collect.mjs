@@ -269,6 +269,11 @@ async function pcGpu() {
   const r = await probe(`https://api.github.com/gists/${gist}`, { headers: { ...h, Accept: "application/vnd.github+json" } });
   let hb = null;
   try { hb = JSON.parse(r.json()?.files?.["heartbeat.json"]?.content || "null"); } catch {}
+  if (r.ok && hb && !hb.ts) {           // gist created with "{}", PC not posting yet
+    it.checks.push(check("heartbeat", "Heartbeat", "grey", "waiting for the first heartbeat", r.ms));
+    it.light = "grey"; it.reason = "Waiting for the PC's first heartbeat";
+    return it;
+  }
   if (!hb?.ts) {
     it.checks.push(check("heartbeat", "Heartbeat", "red", r.ok ? "no heartbeat.json in gist" : httpReason(r), r.ms));
     return finish(it, { lastHeard: null });
