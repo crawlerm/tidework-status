@@ -27,8 +27,14 @@ const NOW_NAIVE = new Date().toISOString().slice(0, 19);   // mastertides dateti
 
 // ---------------------------------------------------------------- helpers
 
-/** fetch that never throws; returns {ok, status, ms, text, json(), headers, err} */
-async function probe(url, { timeout = 12000, headers = {}, method = "GET", body } = {}) {
+/** fetch that never throws; returns {ok, status, ms, text, json(), headers, err}.
+ *  Retries once on a network error or timeout: GitHub's runners see occasional transient
+ *  connect timeouts that are not the upstream's fault. */
+async function probe(url, opts = {}) {
+  const r = await probeOnce(url, opts);
+  return r.status === 0 ? probeOnce(url, opts) : r;
+}
+async function probeOnce(url, { timeout = 12000, headers = {}, method = "GET", body } = {}) {
   const t0 = Date.now();
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeout);
@@ -127,6 +133,13 @@ function item(id, label, group, extra = {}) {
 }
 
 function finish(it, { lastHeard = null, providerCounts = true } = {}) {
+  // An upstream we can't reach from GitHub while our own stored copy is fresh is a warning,
+  // not a failure: the data is still arriving by the path that matters.
+  const up = it.checks.find((c) => c.id === "upstream");
+  const stored = it.checks.filter((c) => c.id !== "upstream");
+  if (up && up.light === "red" && stored.length && stored.every((c) => c.light === "green")) {
+    up.light = "amber"; up.detail = `${up.detail} (our stored copy is still fresh)`;
+  }
   // grey = "not measured" (unconfigured capacity, unreachable status page): it never outranks
   // a real measurement. An item is grey only if nothing about it could be measured.
   const all = it.checks.map((c) => c.light).concat(it.capacity.map((c) => c.light));
@@ -293,7 +306,7 @@ async function hha() {
     ["wr", "Felixstowe Waverider", "WaveRider", "wave_hm0", 120, 240],
   ];
   const [up, ...cs] = await Promise.all([
-    probe("https://hha.port-log.net/live/History.php", { timeout: 15000 }),
+    probe("https://hha.port-log.net/", { timeout: 20000 }),
     ...sites.map(([id, l, loc, col, a, r]) => obsCheck(id, `Stored: ${l}`, loc, col, a, r)),
   ]);
   it.checks.push(check("upstream", "Upstream answers", up.ok ? "green" : "red", up.ok ? null : httpReason(up), up.ms), ...cs);
