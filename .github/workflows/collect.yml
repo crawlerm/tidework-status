@@ -55,6 +55,9 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
+          # Unique per attempt: "Re-run jobs" keeps the earlier attempt's artifact, and
+          # deploy-pages fails if two share a name.
+          name: github-pages-${{ github.run_attempt }}
 
       # deploy-pages looks the artifact up through an API that is eventually consistent:
       # about 40% of runs failed with "No artifacts named github-pages were found" seconds
@@ -64,6 +67,8 @@ jobs:
 
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
         continue-on-error: true
 
       - name: Retry deploy (1)
@@ -74,6 +79,8 @@ jobs:
       - id: deployment2
         if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
         continue-on-error: true
 
       - name: Retry deploy (2)
@@ -83,6 +90,8 @@ jobs:
       - id: deployment3
         if: steps.deployment.outcome == 'failure' && steps.deployment2.outcome == 'failure'
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
 
       # GitHub disables scheduled workflows in a public repo after 60 days with no repo
       # activity. Re-enabling via the API on every run is the usual keep-alive. The page
